@@ -1,0 +1,74 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Aug 30 17:37:09 2021
+
+@author: Shadow
+"""
+
+import pandas as pd
+
+from data_preprocess import *
+from tokenize_data import *
+from lit_ner import *
+import pickle 
+
+
+def main():
+        
+    train_data = get_single_ner('memc', train = True)
+    val_data = get_single_ner('memc')
+    test_data = get_single_ner('memc', test = True)        
+        
+    encoder_name = 'bert-base-uncased'
+    
+    train_data, unique_labels = process_data(train_data, return_unique=True)
+    val_data = process_data(val_data)
+    test_data = process_data(test_data)
+    
+    tokenizer = NER_tokenizer(unique_labels, max_length=64, tokenizer_name = encoder_name)
+    
+    train_dataset = tokenizer.tokenize_and_encode_labels(train_data)
+    val_dataset = tokenizer.tokenize_and_encode_labels(val_data)
+    test_dataset = tokenizer.tokenize_and_encode_labels(test_data)
+    
+    model = LIT_NER(num_classes = len(tokenizer.id2tag), 
+                     id2tag = tokenizer.id2tag,
+                     tag2id = tokenizer.tag2id,
+                     hidden_dropout_prob=.1,
+                     attention_probs_dropout_prob=.1,
+                     encoder_name = encoder_name,
+                     save_fp='bert_memc.pt')
+    
+    
+    model = train_LitModel(model, train_dataset, val_dataset, max_epochs=10, batch_size=32, patience = 2, num_gpu=1)
+    
+    
+    if not os.path.exists('bert_memc'):
+        os.makedirs('bert_memc')
+         
+    #saving train stats
+    with open('bert_memc/bert_train_stats.pkl', 'wb') as f:
+        pickle.dump(model.training_stats, f)
+    
+    #reloading the model for testing
+    model = LIT_NER(num_classes = len(tokenizer.id2tag), 
+                     id2tag = tokenizer.id2tag,
+                     tag2id = tokenizer.tag2id,
+                     hidden_dropout_prob=.1,
+                     attention_probs_dropout_prob=.1,
+                     encoder_name = encoder_name,
+                     save_fp='best_model.pt')
+    
+    model.load_state_dict(torch.load('bert_memc.pt'))
+    
+    cr = model_testing(model, test_dataset)
+    
+    with open('bert_memc/bert_test_stats.pkl', 'wb') as f:
+            pickle.dump(cr, f)
+
+if __name__ == "__main__":
+    main()
+    
+    
+    
+    
