@@ -76,11 +76,10 @@ class LIT_NER(pl.LightningModule):
     #WE MAY NOT NEED
     def conf_avg(self, active_gt_probs, active_preds, active_labels):
         
-        gt_probs, variances, correct = [], [], []
+        gt_probs, correct = [], []
         for probs, preds, labels in zip(active_gt_probs, active_preds, active_labels):
             
             avg_gt_prob = np.mean(probs)
-            var = np.var(probs)
             
             num_correct = 0
             for pred, label in zip(preds, labels):
@@ -91,10 +90,27 @@ class LIT_NER(pl.LightningModule):
             
             #each of these lists have length [batch size, ]
             gt_probs.append(avg_gt_prob)
-            variances.append(var)
             correct.append(correctness)
         
-        return np.array(gt_probs), np.array(variances), np.array(correct)
+        return np.array(gt_probs), np.array(correct)
+    
+    def conf_token_level(self, active_gt_probs, active_preds, active_labels):
+        
+        correct = []
+        for preds, labels in zip(active_preds, active_labels):
+            
+            for pred, label in zip(preds, labels):
+                if pred == label:
+                    correct.append(True)
+                else:
+                    correct.append(False)
+            
+            
+            #each of these lists have length [total # tokens, ]
+            
+        active_gt_probs = list(itertools.chain(*active_gt_probs))
+        
+        return active_gt_probs, correct
 
     def training_step(self, batch, batch_idx):
         
