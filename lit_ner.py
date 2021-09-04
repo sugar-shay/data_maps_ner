@@ -110,7 +110,7 @@ class LIT_NER(pl.LightningModule):
             
         active_gt_probs = list(itertools.chain(*active_gt_probs))
         
-        return active_gt_probs, correct
+        return np.array(active_gt_probs), np.array(correct)
 
     def training_step(self, batch, batch_idx):
         
@@ -216,7 +216,7 @@ class LIT_NER(pl.LightningModule):
         active_gt_probs = [[p for (p, l) in zip(prob, label) if l != -100]
                   for prob, label in zip(gt_probs, labels)]
         
-        seq_gt_probs, seq_correct = self.conf_avg(active_gt_probs, active_preds, active_labels)
+        active_gt_probs, active_correct = self.conf_avg(active_gt_probs, active_preds, active_labels)
         
         acc = accuracy_score(list(itertools.chain(*active_labels)), list(itertools.chain(*active_preds)))
 
@@ -248,7 +248,7 @@ class LIT_NER(pl.LightningModule):
         #print('Active GT Probs Shape: ', len(active_gt_probs))
     
         
-        return {"loss": loss, 'train_loss': loss, "seq_gt_probs": seq_gt_probs, "seq_correct": seq_correct, 'train_acc':acc}
+        return {"loss": loss, 'train_loss': loss, "gt_probs": active_gt_probs, "correct": active_correct, 'train_acc':acc}
     
     def training_epoch_end(self, outputs):
         # Outputs --> List of Individual Step Outputs
@@ -260,8 +260,12 @@ class LIT_NER(pl.LightningModule):
         self.training_stats['train_accs'].append(avg_acc)
         
         #both of these have shape [# examples]
-        gt_probs = np.concatenate([x['seq_gt_probs'] for x in outputs])
-        correctness = np.concatenate([x['seq_correct'] for x in outputs])
+        gt_probs = np.concatenate([x['gt_probs'] for x in outputs])
+        
+        correctness = np.concatenate([x['correct'] for x in outputs])
+        
+        print('GT Probs shape: ', gt_probs.shape)
+        print('Correctness shape: ', correctness.shape)
         
         self.training_stats['gt_probs'].append(gt_probs)
         self.training_stats['correctness'].append(correctness)
