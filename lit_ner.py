@@ -216,7 +216,7 @@ class LIT_NER(pl.LightningModule):
         active_gt_probs = [[p for (p, l) in zip(prob, label) if l != -100]
                   for prob, label in zip(gt_probs, labels)]
         
-        active_gt_probs, active_correct = self.conf_avg(active_gt_probs, active_preds, active_labels)
+        active_gt_probs, active_correct = self.conf_token_level(active_gt_probs, active_preds, active_labels)
         
         acc = accuracy_score(list(itertools.chain(*active_labels)), list(itertools.chain(*active_preds)))
 
