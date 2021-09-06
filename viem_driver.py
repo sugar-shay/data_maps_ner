@@ -15,21 +15,23 @@ import pickle
 
 def main(category = 'memc', save_dir = 'results'):
         
-    train_data = get_single_ner(category, train = True)
-    if category == 'memc':
-        val_data = get_single_ner(category)
-    else:
-        num_val = np.floor(.2*train_data.shape[0])
-        val_data = pd.DataFrame(train_data.iloc[:num_val, :])
-        train_data = pd.DataFrame(train_data.iloc[num_val:, :])
-        
+    train_data = get_single_ner(category, train = True)    
     test_data = get_single_ner(category, test = True)        
-        
+    
+    
     encoder_name = 'bert-base-uncased'
     
     train_data, unique_labels = process_data(train_data, return_unique=True)
-    val_data = process_data(val_data)
     test_data = process_data(test_data)
+    
+    if category == 'memc':
+        val_data = get_single_ner(category)
+        val_data = process_data(val_data)
+
+    else:
+        num_val = np.floor(.2*train_data.shape[0])
+        val_data = train_data.loc[:num_val, :]
+        train_data = train_data.loc[num_val:, :]
     
     print()
     print('# of Training Examples: ', train_data.shape[0])
