@@ -250,6 +250,7 @@ class LIT_NER(pl.LightningModule):
     
         if self.current_epoch == 0:
             active_labels = list(itertools.chain(*active_labels))
+            print('Active Labe Head: ', active_labels[:5])
             active_labels = [self.id2tag[label] for label in active_labels]
             return {"loss": loss, 'train_loss': loss, "gt_probs": active_gt_probs, "correct": active_correct, 'train_acc':acc, 'train_labels': active_labels}
         else:
