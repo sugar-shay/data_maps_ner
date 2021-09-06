@@ -249,9 +249,8 @@ class LIT_NER(pl.LightningModule):
         #print('Active GT Probs Shape: ', len(active_gt_probs))
     
         if self.current_epoch == 0:
+            #active_labels is already in tag form i.e. ['SN', 'SV', 'O', 'O', 'O']
             active_labels = list(itertools.chain(*active_labels))
-            print('Active Labe Head: ', active_labels[:5])
-            active_labels = [self.id2tag[label] for label in active_labels]
             return {"loss": loss, 'train_loss': loss, "gt_probs": active_gt_probs, "correct": active_correct, 'train_acc':acc, 'train_labels': active_labels}
         else:
             return {"loss": loss, 'train_loss': loss, "gt_probs": active_gt_probs, "correct": active_correct, 'train_acc':acc}
