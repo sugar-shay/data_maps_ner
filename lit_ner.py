@@ -44,7 +44,8 @@ class LIT_NER(pl.LightningModule):
                                'train_accs':[],
                                'val_accs':[],
                                'gt_probs':[],
-                               'correctness':[]}
+                               'correctness':[],
+                               'train_labels':[]}
         
 
         self.save_fp = save_fp
@@ -247,8 +248,10 @@ class LIT_NER(pl.LightningModule):
         # will havve shape 32 because its a list of lists 
         #print('Active GT Probs Shape: ', len(active_gt_probs))
     
-        
-        return {"loss": loss, 'train_loss': loss, "gt_probs": active_gt_probs, "correct": active_correct, 'train_acc':acc}
+        if self.current_epoch == 0:
+            return {"loss": loss, 'train_loss': loss, "gt_probs": active_gt_probs, "correct": active_correct, 'train_acc':acc, 'train_labels': list(itertools.chain(*active_preds))}
+        else:
+            return {"loss": loss, 'train_loss': loss, "gt_probs": active_gt_probs, "correct": active_correct, 'train_acc':acc}
     
     def training_epoch_end(self, outputs):
         # Outputs --> List of Individual Step Outputs
@@ -270,6 +273,8 @@ class LIT_NER(pl.LightningModule):
         self.training_stats['gt_probs'].append(gt_probs)
         self.training_stats['correctness'].append(correctness)
     
+        if self.current_epoch == 0:
+            self.training_stats['train_labels'] =  np.concatenate([x['train_labels'] for x in outputs])
         self.log('train_loss', avg_loss)
         
     def validation_step(self, batch, batch_idx):
